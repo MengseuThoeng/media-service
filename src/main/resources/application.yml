@@ -1,0 +1,11 @@
+spring.application.name: media-service
+
+server:
+  port: 8100
+
+minio:
+  server:
+    url: http://34.101.39.118:5430
+    access-key: minioadmin
+    secret-key: minioadmin123
+    bucket-name: files
