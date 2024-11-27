@@ -1,19 +1,19 @@
 package co.istad.media_service.controller;
 
 
+import co.istad.media_service.dto.FileResponse;
 import co.istad.media_service.service.FileService;
-import io.minio.errors.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,13 +22,41 @@ public class FileController {
 
     private final FileService fileService;
 
-    @PostMapping("/upload")
-    ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/upload-multiple")
+    public ResponseEntity<List<Map<String, String>>> uploadMultipleFiles(
+            @RequestParam("files") MultipartFile[] files) {
         try {
-            String response = fileService.uploadFile(file);
+            // Call the service to upload multiple files
+            List<Map<String, String>> response = fileService.uploadMultipleFiles(files);
             return ResponseEntity.ok(response);
-        }catch (Exception e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
+        } catch (Exception e) {
+            // Return error response if something goes wrong
+            return ResponseEntity.status(500).body(List.of(Map.of(
+                    "error", "Failed to upload files",
+                    "reason", e.getMessage()
+            )));
+        }
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/upload")
+    Map<String, String> uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
+        return fileService.uploadFile(file);
+
+    }
+
+    @GetMapping("/all")
+    ResponseEntity<?> getAllFiles() throws Exception {
+        return ResponseEntity.ok(fileService.getAllFiles());
+    }
+
+    @GetMapping("/{fileName}")
+    FileResponse getFileByName(@PathVariable String fileName) {
+        try {
+            return fileService.getFileByName(fileName);
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -52,13 +80,11 @@ public class FileController {
         }
     }
 
+
+
     @DeleteMapping("/delete")
-    ResponseEntity<?> deleteFile(@RequestParam String fileName) {
-        try {
-            String response = fileService.deleteFile(fileName);
-            return ResponseEntity.ok(response);
-        }catch (Exception e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
+    Map<String, String> deleteFile(@RequestParam String fileName) throws Exception {
+        return fileService.deleteFile(fileName);
+
     }
 }
